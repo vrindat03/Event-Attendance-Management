@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Digital Attendance</title>
+    <!-- 1. Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <style>
+        /* Optional: Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #4a5568;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background-color: #1a202c;
+        }
+        /* Modal styles */
+        .modal-backdrop {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="antialiased text-slate-800 bg-gray-100">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-800 text-white flex flex-col fixed inset-y-0 left-0 z-20">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-white">Admin Panel</h1>
+            </div>
+            <nav class="flex-1 space-y-2 px-4">
+                <a href="#" data-action="show-view" data-view="dashboard" class="flex items-center gap-3 px-4 py-2 rounded-lg bg-blue-600 text-white">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" data-action="show-view" data-view="create-user" data-mode="create" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-slate-700 transition-all">
+                    <i data-lucide="user-plus"></i>
+                    <span>Create User</span>
+                </a>
+                <a href="#" data-action="show-view" data-view="students-list" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-slate-700 transition-all">
+                    <i data-lucide="users"></i>
+                    <span>Students List</span>
+                </a>
+                <a href="#" data-action="show-view" data-view="faculties-list" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-slate-700 transition-all">
+                    <i data-lucide="briefcase"></i>
+                    <span>Faculties List</span>
+                </a>
+                
+            </nav>
+            <div class="p-4 mt-auto">
+                <button data-action="logout" class="flex w-full items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-all">
+                    <i data-lucide="log-out" class="h-5 w-5"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="ml-64 flex-1 p-8">
+            <!-- View: Dashboard -->
+            <div id="view-dashboard" class="view-panel">
+                <h2 class="text-4xl font-semibold text-gray-800">Welcome, Admin</h2>
+                
+                <!-- Main Sections -->
+                <section class="mt-8">
+                    <h3 class="text-2xl font-semibold text-gray-700">Main Sections</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+                        
+                        <!-- Card 1: Students -->
+                        <div class="bg-white p-6 rounded-xl shadow-lg transition-all hover:shadow-xl hover:scale-105">
+                            <h4 class="text-xl font-bold text-gray-800">Students</h4>
+                            <p class="text-gray-600 mt-2">View and manage all registered students.</p>
+                            <button data-action="show-view" data-view="students-list" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-lg transition-all">
+                                View Students
+                            </button>
+                        </div>
+
+                        <!-- Card 2: Faculties -->
+                        <div class="bg-white p-6 rounded-xl shadow-lg transition-all hover:shadow-xl hover:scale-105">
+                            <h4 class="text-xl font-bold text-gray-800">Faculties</h4>
+                            <p class="text-gray-600 mt-2">View and manage all faculties.</p>
+                            <button data-action="show-view" data-view="faculties-list" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-lg transition-all">
+                                View Faculties
+                            </button>
+                        </div>
+                        
+                    </div>
+                </section>
+            </div>
+            
+            <!-- View: Create/Edit User Form -->
+            <div id="view-create-user" class="view-panel hidden">
+                <h2 id="form-title" class="text-4xl font-semibold text-gray-800">Create New User</h2>
+                <div class="mt-8 bg-white p-8 rounded-xl shadow-lg">
+                    <form id="create-user-form" class="space-y-6">
+                        <!-- Hidden input to store user ID during edit -->
+                        <input type="hidden" id="edit-user-id" name="edit-user-id">
+                        <input type="hidden" id="edit-user-role" name="edit-user-role">
+
+                        <div>
+                            <label for="user-role" class="block text-sm font-medium text-gray-700">Role</label>
+                            <select id="user-role" name="user-role" class="mt-1 block w-full max-w-md py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <option value="">Select a role...</option>
+                                <option value="student">Student</option>
+                                <option value="faculty">Faculty</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="full-name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                            <input type="text" name="full-name" id="full-name" placeholder="e.g., Alex Johnson" class="mt-1 block w-full max-w-md py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                        </div>
+                        
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                            <input type="email" name="email" id="email" placeholder="e.g., alex.johnson@example.com" class="mt-1 block w-full max-w-md py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                        </div>
+                        
+                        <div>
+                            <label for="user-id" class="block text-sm font-medium text-gray-700" id="user-id-label">User ID / Employee ID</label>
+                            <input type="text" name="user-id" id="user-id" placeholder="e.g., 100123" class="mt-1 block w-full max-w-md py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
+                        </div>
+
+                        <!-- Password Field -->
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-700" id="password-label">Password</label>
+                            <div class="mt-1 relative w-full max-w-md">
+                                <input type="password" name="password" id="password" placeholder="••••••••" class="block w-full py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm pr-10">
+                                <button type="button" data-action="toggle-password" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700">
+                                    <i data-lucide="eye" class="h-5 w-5"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Role-specific fields container -->
+                        <div id="role-specific-fields" class="space-y-6">
+                            <!-- Student Fields -->
+                            <div id="student-fields" class="hidden space-y-6">
+                                <div>
+                                    <label for="branch" class="block text-sm font-medium text-gray-700">Branch</label>
+                                    <input type="text" name="branch" id="branch" placeholder="e.g., Computer Science" class="mt-1 block w-full max-w-md py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                </div>
+                                <div>
+                                    <label for="year-of-registration" class="block text-sm font-medium text-gray-700">Year of Registration</label>
+                                    <input type="number" name="year-of-registration" id="year-of-registration" placeholder="e.g., 2023" class="mt-1 block w-full max-w-md py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                </div>
+                            </div>
+                            
+                            <!-- Faculty Fields -->
+                            <div id="faculty-fields" class="hidden space-y-6">
+                                <div>
+                                    <label for="department" class="block text-sm font-medium text-gray-700">Department</label>
+                                    <input type="text" name="department" id="department" placeholder="e.g., Computer Science" class="mt-1 block w-full max-w-md py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                </div>
+                                <div>
+                                    <label for="subject" class="block text-sm font-medium text-gray-700">Subject</label>
+                                    <input type="text" name="subject" id="subject" placeholder="e.g., Data Structures" class="mt-1 block w-full max-w-md py-2 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-4">
+                            <button type="submit" id="form-submit-button" data-action="submit-create-user" class="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-all text-lg">
+                                <i data-lucide="check-circle" class="h-5 w-5"></i>
+                                <span id="form-submit-text">Create User</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- View: Students List -->
+            <div id="view-students-list" class="view-panel hidden">
+                 <h2 class="text-4xl font-semibold text-gray-800">Students List</h2>
+                 <h3 class="text-xl font-medium text-gray-600 mt-2">All Registered Students</h3>
+                 <div class="mt-8 bg-white p-8 rounded-xl shadow-lg">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year of Registration</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="student-table-body" class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="6" class="p-6 text-center text-gray-500">Please click "Students List" to load data.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                 </div>
+            </div>
+            
+            <!-- View: Faculties List -->
+            <div id="view-faculties-list" class="view-panel hidden">
+                 <h2 class="text-4xl font-semibold text-gray-800">Faculties List</h2>
+                 <h3 class="text-xl font-medium text-gray-600 mt-2">All Registered Faculty</h3>
+                 
+                 <div class="mt-6">
+                    <label for="faculty-filter" class="block text-sm font-medium text-gray-700">Filter by role:</label>
+                    <select id="faculty-filter" name="faculty-filter" data-action="filter-faculty" class="mt-1 block w-full max-w-xs py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <option value="all">Show All</option>
+                        <option value="coordinator">Only Event Coordinators</option>
+                        <option value="faculty_only">Faculty Only (Not Coordinators)</option>
+                    </select>
+                 </div>
+
+                 <div class="mt-4 bg-white p-8 rounded-xl shadow-lg">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event Coordinator</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="faculty-table-body" class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="7" class="p-6 text-center text-gray-500">Please click "Faculties List" to load data.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                 </div>
+            </div>
+            
+        </main>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden modal-backdrop opacity-0">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md modal-content transform scale-95">
+            <div class="flex justify-between items-center">
+                <h3 class="text-2xl font-bold text-gray-800">Confirm Deletion</h3>
+                <button data-action="close-modal" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="h-6 w-6"></i>
+                </button>
+            </div>
+            <p class="text-gray-600 mt-4">
+                Are you sure you want to delete <strong id="delete-user-name" class="font-bold">this user</strong>? This action cannot be undone.
+            </p>
+            <div class="mt-8 flex justify-end gap-4">
+                <button data-action="close-modal" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-all">
+                    Cancel
+                </button>
+                <button id="confirm-delete-button" data-action="confirm-delete" data-user-id="" data-user-role="" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-all">
+                    Delete User
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        const appData = {
+            students: null,
+            faculty: null
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            showView('dashboard');
+            document.getElementById('user-role').addEventListener('change', handleRoleChange);
+        });
+        
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    modal.querySelector('.modal-content').classList.remove('scale-95');
+                }, 10);
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('opacity-0');
+                modal.querySelector('.modal-content').classList.add('scale-95');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
+        }
+        
+        function showDeleteModal(userId, userName, userRole) {
+            document.getElementById('delete-user-name').textContent = `"${userName}"`;
+            const confirmBtn = document.getElementById('confirm-delete-button');
+            confirmBtn.dataset.userId = userId;
+            confirmBtn.dataset.userRole = userRole;
+            openModal('delete-modal');
+        }
+
+        function showView(viewId, mode = 'view', data = null) {
+            document.querySelectorAll('.view-panel').forEach(panel => {
+                panel.classList.add('hidden');
+            });
+            
+            const targetView = document.getElementById(`view-${viewId}`);
+            if (targetView) {
+                targetView.classList.remove('hidden');
+            }
+            
+            const targetLink = document.querySelector(`aside nav a[data-view="${viewId}"]`);
+            document.querySelectorAll('aside nav a').forEach(a => {
+                a.classList.remove('bg-blue-600', 'text-white');
+                a.classList.add('hover:bg-slate-700');
+            });
+            if (targetLink) {
+                targetLink.classList.add('bg-blue-600', 'text-white');
+                targetLink.classList.remove('hover:bg-slate-700');
+            }
+            
+            if (viewId === 'create-user') {
+                setupUserForm(mode, data);
+            }
+        }
+        
+        function setupUserForm(mode, userData) {
+            const form = document.getElementById('create-user-form');
+            const title = document.getElementById('form-title');
+            const submitButton = document.getElementById('form-submit-button');
+            const submitText = document.getElementById('form-submit-text');
+            const passwordLabel = document.getElementById('password-label');
+            const passwordInput = document.getElementById('password');
+            const userIdInput = document.getElementById('user-id');
+
+            form.reset();
+            document.getElementById('role-specific-fields').querySelectorAll('.space-y-6').forEach(div => div.classList.add('hidden'));
+
+            if (mode === 'edit') {
+                title.textContent = 'Edit User';
+                submitText.textContent = 'Update User';
+                submitButton.dataset.action = 'submit-edit-user';
+                submitButton.classList.replace('bg-green-600', 'bg-blue-600');
+                submitButton.classList.replace('hover:bg-green-700', 'hover:bg-blue-700');
+                
+                document.getElementById('edit-user-id').value = userData.id;
+                document.getElementById('edit-user-role').value = userData.role;
+                document.getElementById('user-role').value = userData.role;
+                document.getElementById('full-name').value = userData.name;
+                document.getElementById('email').value = userData.email;
+                
+                if (userData.role === 'student') {
+                    userIdInput.value = userData.studentId;
+                    document.getElementById('student-fields').classList.remove('hidden');
+                    document.getElementById('branch').value = userData.branch;
+                    document.getElementById('year-of-registration').value = userData.yearOfRegistration;
+                } else if (userData.role === 'faculty') {
+                    userIdInput.value = userData.employeeId;
+                    document.getElementById('faculty-fields').classList.remove('hidden');
+                    document.getElementById('department').value = userData.department;
+                    document.getElementById('subject').value = userData.subject;
+                } else {
+                    userIdInput.value = userData.id;
+                }
+
+                document.getElementById('user-role').disabled = true;
+                userIdInput.disabled = true;
+                passwordLabel.textContent = "Reset Password (Optional)";
+                passwordInput.placeholder = "Leave blank to keep current password";
+                passwordInput.required = false;
+
+            } else {
+                title.textContent = 'Create New User';
+                submitText.textContent = 'Create User';
+                submitButton.dataset.action = 'submit-create-user';
+                submitButton.classList.replace('bg-blue-600', 'bg-green-600');
+                submitButton.classList.replace('hover:bg-blue-700', 'hover:bg-green-700');
+
+                document.getElementById('edit-user-id').value = '';
+                document.getElementById('edit-user-role').value = '';
+                document.getElementById('user-role').disabled = false;
+                userIdInput.disabled = false;
+                passwordLabel.textContent = "Password";
+                passwordInput.placeholder = "••••••••";
+                passwordInput.required = true;
+            }
+            handleRoleChange();
+        }
+
+        function handleRoleChange() {
+            const role = document.getElementById('user-role').value;
+            const studentFields = document.getElementById('student-fields');
+            const facultyFields = document.getElementById('faculty-fields');
+            const userIdLabel = document.getElementById('user-id-label');
+            
+            studentFields.classList.add('hidden');
+            facultyFields.classList.add('hidden');
+            
+            document.getElementById('branch').required = false;
+            document.getElementById('year-of-registration').required = false;
+            document.getElementById('department').required = false;
+            document.getElementById('subject').required = false;
+
+            if (role === 'student') {
+                studentFields.classList.remove('hidden');
+                userIdLabel.textContent = 'Student ID';
+                document.getElementById('branch').required = true;
+                document.getElementById('year-of-registration').required = true;
+            } else if (role === 'faculty') {
+                facultyFields.classList.remove('hidden');
+                userIdLabel.textContent = 'Employee ID';
+                document.getElementById('department').required = true;
+                document.getElementById('subject').required = true;
+            } else if (role === 'admin') {
+                userIdLabel.textContent = 'Admin User ID';
+            } else {
+                userIdLabel.textContent = 'User ID / Employee ID';
+            }
+        }
+
+        document.body.addEventListener('click', (e) => {
+            const actionButton = e.target.closest('[data-action]');
+            if (!actionButton) return;
+
+            const action = actionButton.dataset.action;
+
+            if (action === 'show-view') {
+                e.preventDefault(); 
+                const viewId = actionButton.dataset.view;
+                const mode = actionButton.dataset.mode || 'view';
+                
+                let data = null;
+                if(mode === 'create') {
+                    data = null;
+                }
+                
+                showView(viewId, mode, data); 
+                
+                if (viewId === 'faculties-list') loadFacultyData();
+                if (viewId === 'students-list') loadStudentsData();
+                return;
+            }
+            
+            if (action === 'close-modal') {
+                closeModal('delete-modal');
+                return;
+            }
+            
+            if (action === 'logout') {
+                alert("You have been logged out.");
+                return;
+            }
+
+            if (action === 'toggle-password') {
+                e.preventDefault();
+                const input = actionButton.previousElementSibling; 
+                const icon = actionButton.querySelector('i'); 
+                
+                if (input.type === "password") {
+                    input.type = "text";
+                    icon.setAttribute('data-lucide', 'eye-off');
+                } else {
+                    input.type = "password";
+                    icon.setAttribute('data-lucide', 'eye');
+                }
+                lucide.createIcons();
+                return;
+            }
+            
+            if (action === 'edit-user') {
+                const role = actionButton.dataset.userRole;
+                const id = actionButton.dataset.userId;
+                let userData;
+                
+                if (role === 'student') {
+                    userData = appData.students.find(u => u.studentId === id);
+                    userData.id = userData.studentId;
+                    userData.role = 'student';
+                } else if (role === 'faculty') {
+                    userData = appData.faculty.find(u => u.employeeId === id);
+                    userData.id = userData.employeeId;
+                    userData.role = 'faculty';
+                }
+                
+                if (userData) {
+                    showView('create-user', 'edit', userData);
+                }
+                return;
+            }
+
+            if (action === 'delete-user') {
+                const userId = actionButton.dataset.userId;
+                const userName = actionButton.dataset.userName;
+                const userRole = actionButton.dataset.userRole;
+                showDeleteModal(userId, userName, userRole);
+                return;
+            }
+            
+            if (action === 'confirm-delete') {
+                const userId = actionButton.dataset.userId;
+                const userRole = actionButton.dataset.userRole;
+                
+                if (userRole === 'student') {
+                    appData.students = appData.students.filter(u => u.studentId !== userId);
+                    renderStudentsList();
+                } else if (userRole === 'faculty') {
+                    appData.faculty = appData.faculty.filter(u => u.employeeId !== userId);
+                    renderFacultyList();
+                }
+                
+                alert(`User with ID ${userId} has been deleted.`);
+                closeModal('delete-modal');
+                return;
+            }
+        });
+
+        document.getElementById('create-user-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const submitButton = document.getElementById('form-submit-button');
+            const action = submitButton.dataset.action;
+            
+            const form = e.target;
+            const formData = new FormData(form);
+            const role = formData.get('user-role');
+
+            const userData = {
+                role: role,
+                name: formData.get('full-name'),
+                email: formData.get('email'),
+            };
+            
+            if (action === 'submit-create-user') {
+                if (role === 'student') {
+                    userData.studentId = formData.get('user-id');
+                    userData.branch = formData.get('branch');
+                    userData.yearOfRegistration = formData.get('year-of-registration');
+                    appData.students.push(userData);
+                } else if (role === 'faculty') {
+                    userData.employeeId = formData.get('user-id');
+                    userData.department = formData.get('department');
+                    userData.subject = formData.get('subject');
+                    userData.isCoordinator = false;
+                    appData.faculty.push(userData);
+                }
+                console.log("Creating new user:", userData);
+                alert(`User "${userData.name}" created!`);
+                
+            } else if (action === 'submit-edit-user') {
+                const id = formData.get('edit-user-id');
+                const originalRole = formData.get('edit-user-role');
+                
+                if (originalRole === 'student') {
+                    let user = appData.students.find(u => u.studentId === id);
+                    user.name = userData.name;
+                    user.email = userData.email;
+                    user.branch = formData.get('branch');
+                    user.yearOfRegistration = formData.get('year-of-registration');
+                    console.log("Updating student:", user);
+                } else if (originalRole === 'faculty') {
+                    let user = appData.faculty.find(u => u.employeeId === id);
+                    user.name = userData.name;
+                    user.email = userData.email;
+                    user.department = formData.get('department');
+                    user.subject = formData.get('subject');
+                    console.log("Updating faculty:", user);
+                }
+                alert(`User "${userData.name}" updated!`);
+            }
+            
+            const viewId = role === 'student' ? 'students-list' : 'faculties-list';
+            showView(viewId);
+            if (role === 'student') renderStudentsList();
+            if (role === 'faculty') renderFacultyList();
+        });
+
+
+        document.body.addEventListener('change', (e) => {
+            const actionElement = e.target.closest('[data-action]');
+            if (!actionElement) return;
+
+            const action = actionElement.dataset.action;
+
+            if (action === 'toggle-coordinator') {
+                const facultyId = actionElement.dataset.facultyId;
+                const isCoordinator = actionElement.checked;
+                
+                console.log(`Setting faculty ${facultyId} as coordinator: ${isCoordinator}`);
+                
+                alert(`Faculty ${facultyId} is now ${isCoordinator ? 'an Event Coordinator' : 'no longer an Event Coordinator'}.`);
+                
+                if (appData.faculty) {
+                    const faculty = appData.faculty.find(f => f.employeeId === facultyId);
+                    if (faculty) faculty.isCoordinator = isCoordinator;
+                    renderFacultyList();
+                }
+            }
+
+            if (action === 'filter-faculty') {
+                renderFacultyList();
+            }
+        });
+
+        async function loadFacultyData() {
+            if (appData.faculty) {
+                console.log("Loading faculty from cache...");
+                renderFacultyList(); 
+                return;
+            }
+
+            const tableBody = document.getElementById('faculty-table-body');
+            tableBody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-gray-500">Loading...</td></tr>`;
+
+            try {
+                await new Promise(resolve => setTimeout(resolve, 500)); 
+                const facultyList = [
+                    { name: "Prof. Elara Vance", email: "e.vance@university.edu", employeeId: "F-1001", department: "Computer Science", subject: "Data Structures", isCoordinator: true },
+                    { name: "Prof. Kenji Tanaka", email: "k.tanaka@university.edu", employeeId: "F-1002", department: "Physics", subject: "Quantum Mechanics", isCoordinator: false },
+                    { name: "Dr. Anya Sharma", email: "a.sharma@university.edu", employeeId: "F-1003", department: "Mathematics", subject: "Calculus", isCoordinator: false },
+                    { name: "Dr. Marcus Cole", email: "m.cole@university.edu", employeeId: "F-1004", department: "History", subject: "World History", isCoordinator: true }
+                ];
+                
+                appData.faculty = facultyList;
+                renderFacultyList();
+
+            } catch (error) {
+                console.error("Failed to fetch faculty:", error);
+                tableBody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-500">Failed to load faculty data.</td></tr>`;
+            }
+        }
+
+        function renderFacultyList() {
+            const facultyList = appData.faculty; 
+            const tableBody = document.getElementById('faculty-table-body');
+            const filter = document.getElementById('faculty-filter').value;
+
+            if (!facultyList) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-gray-500">No data loaded.</td></tr>`;
+                return;
+            }
+
+            const filteredList = facultyList.filter(faculty => {
+                if (filter === 'coordinator') return faculty.isCoordinator;
+                if (filter === 'faculty_only') return !faculty.isCoordinator;
+                return true; 
+            });
+
+            if (filteredList.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-gray-500">No faculty members match the filter.</td></tr>`;
+                return;
+            }
+
+            const rowsHtml = filteredList.map(faculty => {
+                const isChecked = faculty.isCoordinator ? 'checked' : '';
+                return `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${faculty.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${faculty.email}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${faculty.employeeId}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${faculty.department}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${faculty.subject}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    class="sr-only peer" 
+                                    data-action="toggle-coordinator" 
+                                    data-faculty-id="${faculty.employeeId}" 
+                                    ${isChecked}
+                                >
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                            <button data-action="edit-user" data-user-id="${faculty.employeeId}" data-user-role="faculty" class="text-blue-600 hover:text-blue-900">Edit</button>
+                            <button data-action="delete-user" data-user-id="${faculty.employeeId}" data-user-name="${faculty.name}" data-user-role="faculty" class="text-red-600 hover:text-red-900">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            tableBody.innerHTML = rowsHtml;
+        }
+
+
+        async function loadStudentsData() {
+            if (appData.students) {
+                console.log("Loading students from cache...");
+                renderStudentsList();
+                return;
+            }
+
+            const tableBody = document.getElementById('student-table-body');
+            tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-gray-500">Loading...</td></tr>`;
+
+            try {
+                await new Promise(resolve => setTimeout(resolve, 500)); 
+                const studentList = [
+                    { name: "Alex Johnson", email: "alex.j@school.edu", studentId: "S-1001", branch: "Computer Science", yearOfRegistration: 2022 },
+                    { name: "Maria Garcia", email: "maria.g@school.edu", studentId: "S-1002", branch: "Mechanical", yearOfRegistration: 2021 },
+                    { name: "Sam K.", email: "sam.k@school.edu", studentId: "S-1003", branch: "Electronics", yearOfRegistration: 2023 }
+                ];
+
+                appData.students = studentList;
+                renderStudentsList();
+
+            } catch (error) {
+                console.error("Failed to fetch students:", error);
+                tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-red-500">Failed to load student data.</td></tr>`;
+            }
+        }
+
+        function renderStudentsList() {
+            const studentList = appData.students;
+            const tableBody = document.getElementById('student-table-body');
+            
+            if (!studentList || studentList.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-gray-500">No students found.</td></tr>`;
+                return;
+            }
+
+            const rowsHtml = studentList.map(student => {
+                return `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${student.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${student.email}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${student.studentId}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${student.branch}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${student.yearOfRegistration}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                            <button data-action="edit-user" data-user-id="${student.studentId}" data-user-role="student" class="text-blue-600 hover:text-blue-900">Edit</button>
+                            <button data-action="delete-user" data-user-id="${student.studentId}" data-user-name="${student.name}" data-user-role="student" class="text-red-600 hover:text-red-900">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            tableBody.innerHTML = rowsHtml;
+        }
+
+    </script>
+</body>
+</html>
