@@ -121,6 +121,6 @@ To run this frontend:
 
 Clone this repository to your local machine.
 
-Open the admin_dashboard.html file in any modern web browser.
+Open the files in any modern web browser.
 
 No server is required for the frontend demonstration. All required libraries (Tailwind CSS, Lucide Icons) are loaded via CDN.
