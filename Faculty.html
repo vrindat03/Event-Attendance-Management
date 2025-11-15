@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Dashboard - Digital Attendance</title>
+    <!-- 1. Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <style>
+        /* Optional: Custom scrollbar (same as admin) */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background-color: #4a5568; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background-color: #1a202c; }
+    </style>
+</head>
+<body class="antialiased text-slate-800 bg-gray-100">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-800 text-white flex flex-col fixed inset-y-0 left-0 z-20">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-white">Faculty Panel</h1>
+            </div>
+            <nav class="flex-1 space-y-2 px-4">
+                <a href="#" data-action="show-view" data-view="dashboard" class="flex items-center gap-3 px-4 py-2 rounded-lg bg-blue-600 text-white">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" id="nav-my-students" data-action="show-view" data-view="my-students" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-slate-700 transition-all">
+                    <i data-lucide="users"></i>
+                    <span>My Students</span>
+                </a>
+                <a href="#" id="nav-mark-lecture" data-action="show-view" data-view="mark-lecture" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-slate-700 transition-all">
+                    <i data-lucide="check-square"></i>
+                    <span>Mark Lecture Attendance</span>
+                </a>
+                <!-- This link is hidden by default and shown by JavaScript if the user is a coordinator -->
+                <a href="#" id="nav-mark-attendance" data-action="show-view" data-view="mark-attendance" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-slate-700 transition-all hidden">
+                    <i data-lucide="calendar-check"></i>
+                    <span>Mark Event Attendance</span>
+                </a>
+            </nav>
+            <div class="p-4 mt-auto">
+                <div class="px-4 py-2 mb-4 text-sm bg-gray-900 rounded-lg">
+                    <p class="font-medium" id="sidebar-user-name">Prof. Elara Vance</p>
+                    <p class="text-xs text-gray-400" id="sidebar-user-role">Faculty</p>
+                </div>
+                <button data-action="logout" class="flex w-full items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-all">
+                    <i data-lucide="log-out" class="h-5 w-5"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="ml-64 flex-1 p-8">
+            <!-- View: Dashboard (My Students' Attendance Report) -->
+            <div id="view-dashboard" class="view-panel">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-4xl font-semibold text-gray-800">Dashboard</h2>
+                        <h3 class="text-xl font-medium text-gray-600 mt-2">My Students' Attendance Report</h3>
+                    </div>
+                    <div class="flex gap-4">
+                        <button data-action="download-report" class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-5 rounded-lg transition-all">
+                            <i data-lucide="file-down" class="h-5 w-5"></i>
+                            <span>Download Report</span>
+                        </button>
+                        <button data-action="toggle-role" class="role-toggle-button flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-5 rounded-lg transition-all hidden">
+                            <i data-lucide="arrow-right-left" class="h-5 w-5"></i>
+                            <span class="role-toggle-text">Switch to Event Coordinator</span>
+                        </button>
+                    </div>
+                </div>
+                 
+                 <div class="mt-8 bg-white p-8 rounded-xl shadow-lg">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr id="dashboard-report-header">
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lecture Attd. (Data Structures)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-report-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Report rows will be injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                 </div>
+            </div>
+            
+            <!-- View: My Students List -->
+            <div id="view-my-students" class="view-panel hidden">
+                 <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-4xl font-semibold text-gray-800">My Students</h2>
+                        <h3 class="text-xl font-medium text-gray-600 mt-2">List of students assigned to me</h3>
+                    </div>
+                     <button data-action="toggle-role" class="role-toggle-button flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-5 rounded-lg transition-all hidden">
+                        <i data-lucide="arrow-right-left" class="h-5 w-5"></i>
+                        <span class="role-toggle-text">Switch to Event Coordinator</span>
+                    </button>
+                 </div>
+                 <div class="mt-8 bg-white p-8 rounded-xl shadow-lg">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year of Registration</th>
+                                </tr>
+                            </thead>
+                            <tbody id="my-students-table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Student rows will be injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                 </div>
+            </div>
+
+            <!-- View: Mark Lecture Attendance (Faculty) -->
+            <div id="view-mark-lecture" class="view-panel hidden">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-4xl font-semibold text-gray-800">Mark Lecture Attendance</h2>
+                        <h3 class="text-xl font-medium text-gray-600 mt-2" id="lecture-title-sub">Your Students</h3>
+                    </div>
+                    <button data-action="toggle-role" class="role-toggle-button flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-5 rounded-lg transition-all hidden">
+                        <i data-lucide="arrow-right-left" class="h-5 w-5"></i>
+                        <span class="role-toggle-text">Switch to Event Coordinator</span>
+                    </button>
+                </div>
+
+                <div class="mt-4 bg-white p-8 rounded-xl shadow-lg">
+                    <h4 class="text-xl font-bold text-gray-800 mb-4" id="mark-lecture-table-title">Attendance for [Date]</h4>
+                   <div class="overflow-x-auto">
+                       <table class="min-w-full divide-y divide-gray-200">
+                           <thead class="bg-gray-50">
+                               <tr>
+                                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
+                                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student ID</th>
+                                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mark</th>
+                               </tr>
+                           </thead>
+                           <tbody id="mark-lecture-table-body" class="bg-white divide-y divide-gray-200">
+                               <!-- Attendance marking rows will be injected here -->
+                           </tbody>
+                       </table>
+                   </div>
+                </div>
+            </div>
+
+            <!-- View: Mark Event Attendance (Event Coordinator) -->
+            <div id="view-mark-attendance" class="view-panel hidden">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-4xl font-semibold text-gray-800">Mark Event Attendance</h2>
+                        <h3 class="text-xl font-medium text-gray-600 mt-2">Event Coordinator Panel</h3>
+                    </div>
+                    <button data-action="toggle-role" class="role-toggle-button flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-5 rounded-lg transition-all hidden">
+                        <i data-lucide="arrow-right-left" class="h-5 w-5"></i>
+                        <span class="role-toggle-text">Switch to Event Coordinator</span>
+                    </button>
+                </div>
+                
+                <div class="mt-6">
+                   <label for="event-filter" class="block text-sm font-medium text-gray-700">Select Event:</label>
+                   <select id="event-filter" name="event-filter" data-action="select-event" class="mt-1 block w-full max-w-md py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                       <!-- Event options will be injected here -->
+                   </select>
+                </div>
+
+                <div class="mt-4 bg-white p-8 rounded-xl shadow-lg">
+                    <h4 class="text-xl font-bold text-gray-800 mb-4" id="mark-attendance-table-title">All Students</h4>
+                   <div class="overflow-x-auto">
+                       <table class="min-w-full divide-y divide-gray-200">
+                           <thead class="bg-gray-50">
+                               <tr>
+                                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
+                                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student ID</th>
+                                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mark</th>
+                               </tr>
+                           </thead>
+                           <tbody id="mark-attendance-table-body" class="bg-white divide-y divide-gray-200">
+                               <!-- Attendance marking rows will be injected here -->
+                           </tbody>
+                       </table>
+                   </div>
+                </div>
+            </div>
+            
+        </main>
+    </div>
+
+
+    <script>
+        // --- MOCK DATA & CURRENT USER ---
+        const currentUser = {
+            id: "F-1001",
+            name: "Prof. Elara Vance",
+            role: "Faculty",
+            subject: "Data Structures",
+            isCoordinator: true // <-- SET TO false TO HIDE "Mark Attendance"
+        };
+        
+        // This is the "database" cache
+        const appData = {
+            students: [
+                { name: "Alex Johnson", email: "alex.j@school.edu", studentId: "S-1001", branch: "Computer Science", yearOfRegistration: 2022, facultyId: "F-1001" },
+                { name: "Maria Garcia", email: "maria.g@school.edu", studentId: "S-1002", branch: "Mechanical", yearOfRegistration: 2021, facultyId: "F-1002" },
+                { name: "Sam K.", email: "sam.k@school.edu", studentId: "S-1003", branch: "Electronics", yearOfRegistration: 2023, facultyId: "F-1001" },
+                { name: "Li Wang", email: "li.w@school.edu", studentId: "S-1004", branch: "Computer Science", yearOfRegistration: 2022, facultyId: "F-1002" }
+            ],
+            events: [
+                { id: "E-101", name: "Innovatech AI Conference", date: "2025-11-14" },
+                { id: "E-102", name: "Guest Lecture: Quantum Computing", date: "2025-11-15" }, // This event is on the same day as a lecture
+                { id: "E-103", name: "Workshop: Agile Methodologies", date: "2025-11-16" }
+            ],
+            // Event Attendance: { eventId: { studentId: true/false } }
+            attendance: {
+                "E-101": { "S-1001": true, "S-1002": true, "S-1003": false },
+                "E-102": { "S-1001": true, "S-1003": true } // Alex and Sam attended the event on the 15th
+            },
+            // Lecture Attendance: { facultyId: { date: { studentId: true/false } } }
+            lectureAttendance: {
+                "F-1001": {
+                    "2025-11-14": { "S-1001": true, "S-1003": true },
+                    "2025-11-15": { "S-1001": true, "S-1003": false } // Sam was marked ABSENT for the LECTURE on the 15th
+                }
+            }
+        };
+
+        // --- GLOBAL STATE ---
+        let effectiveRole = 'faculty'; // 'faculty' or 'coordinator'
+        const demoDate = "2025-11-16"; // Hardcode "today" for lecture marking demo
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            setupSidebar();
+            showView('dashboard');
+            updateToggleText(); // Set initial text
+        });
+        
+        function setupSidebar() {
+            document.getElementById('sidebar-user-name').textContent = currentUser.name;
+            let roleText = currentUser.role;
+            if (currentUser.isCoordinator) {
+                roleText += " & Event Coordinator";
+                // Show the toggle button on all views
+                document.querySelectorAll('.role-toggle-button').forEach(btn => {
+                    btn.classList.remove('hidden');
+                });
+            }
+            document.getElementById('sidebar-user-role').textContent = roleText;
+        }
+        
+        function updateToggleText() {
+            const newRoleText = effectiveRole === 'faculty' ? 'Event Coordinator' : 'Faculty';
+            document.querySelectorAll('.role-toggle-text').forEach(span => {
+                span.textContent = `Switch to ${newRoleText}`;
+            });
+        }
+
+        // --- VIEW MANAGEMENT ---
+        function showView(viewId) {
+            document.querySelectorAll('.view-panel').forEach(panel => {
+                panel.classList.add('hidden');
+            });
+            
+            const targetView = document.getElementById(`view-${viewId}`);
+            if (targetView) {
+                targetView.classList.remove('hidden');
+            }
+            
+            document.querySelectorAll('aside nav a').forEach(a => {
+                a.classList.remove('bg-blue-600', 'text-white');
+                a.classList.add('hover:bg-slate-700');
+            });
+            
+            const targetLink = document.querySelector(`aside nav a[data-view="${viewId}"]`);
+            if (targetLink) {
+                targetLink.classList.add('bg-blue-600', 'text-white');
+                targetLink.classList.remove('hover:bg-slate-700');
+            }
+            
+            // Show/hide the toggle button if the user is a coordinator
+            if (currentUser.isCoordinator) {
+                document.querySelectorAll('.role-toggle-button').forEach(btn => btn.classList.remove('hidden'));
+            }
+            
+            // Load data for the shown view
+            if (viewId === 'dashboard') loadDashboardData();
+            if (viewId === 'my-students') loadMyStudentsData();
+            if (viewId === 'mark-attendance') loadMarkAttendanceData();
+            if (viewId === 'mark-lecture') loadMarkLectureData();
+        }
+
+        // --- CLICK/CHANGE EVENT HANDLERS ---
+        document.body.addEventListener('click', (e) => {
+            const actionButton = e.target.closest('[data-action]');
+            if (!actionButton) return;
+
+            const action = actionButton.dataset.action;
+
+            if (action === 'show-view') {
+                e.preventDefault(); 
+                showView(actionButton.dataset.view);
+                return;
+            }
+            
+            if (action === 'logout') {
+                alert("You have been logged out.");
+                return;
+            }
+            
+            if (action === 'toggle-role') {
+                if (effectiveRole === 'faculty') {
+                    effectiveRole = 'coordinator';
+                    document.getElementById('nav-my-students').classList.add('hidden');
+                    document.getElementById('nav-mark-lecture').classList.add('hidden');
+                    document.getElementById('nav-mark-attendance').classList.remove('hidden');
+                    showView('mark-attendance');
+                } else {
+                    effectiveRole = 'faculty';
+                    document.getElementById('nav-my-students').classList.remove('hidden');
+                    document.getElementById('nav-mark-lecture').classList.remove('hidden');
+                    document.getElementById('nav-mark-attendance').classList.add('hidden');
+                    showView('dashboard');
+                }
+                updateToggleText();
+                return;
+            }
+            
+            if (action === 'download-report') {
+                console.log("Downloading report...");
+                const backendUrl = `/api/reports/faculty/${currentUser.id}/csv`;
+                alert("This will trigger a CSV download from your backend API.\n(e.g., " + backendUrl + ")");
+                // window.location.href = backendUrl;
+                return;
+            }
+            
+            if (action === 'mark-attendance') {
+                e.preventDefault();
+                const eventId = actionButton.dataset.eventId;
+                const studentId = actionButton.dataset.studentId;
+                const status = actionButton.dataset.status === 'true';
+                
+                if (!appData.attendance[eventId]) {
+                    appData.attendance[eventId] = {};
+                }
+                appData.attendance[eventId][studentId] = status;
+                
+                renderMarkAttendanceTable(eventId);
+                loadDashboardData();
+            }
+
+            if (action === 'mark-lecture-attendance') {
+                e.preventDefault();
+                const studentId = actionButton.dataset.studentId;
+                const status = actionButton.dataset.status === 'true';
+                
+                if (!appData.lectureAttendance[currentUser.id]) {
+                    appData.lectureAttendance[currentUser.id] = {};
+                }
+                if (!appData.lectureAttendance[currentUser.id][demoDate]) {
+                    appData.lectureAttendance[currentUser.id][demoDate] = {};
+                }
+                appData.lectureAttendance[currentUser.id][demoDate][studentId] = status;
+
+                renderMarkLectureTable(demoDate);
+                loadDashboardData();
+            }
+        });
+        
+        document.body.addEventListener('change', (e) => {
+             const actionElement = e.target.closest('[data-action]');
+             if (!actionElement) return;
+
+             if (actionElement.dataset.action === 'select-event') {
+                 const eventId = actionElement.value;
+                 renderMarkAttendanceTable(eventId);
+             }
+        });
+        
+        // --- DATA LOADING & RENDERING ---
+
+        // 1. Dashboard View
+        function loadDashboardData() {
+            const myStudents = appData.students.filter(s => s.facultyId === currentUser.id);
+            const allEvents = appData.events;
+            
+            const headerRow = document.getElementById('dashboard-report-header');
+            const tableBody = document.getElementById('dashboard-report-body');
+            
+            // Build Header
+            let headerHTML = `<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>`;
+            headerHTML += `<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lecture Attd. (${currentUser.subject})</th>`;
+            // REMOVED: Loop that added event columns
+            headerRow.innerHTML = headerHTML;
+            
+            // Build Body
+            let bodyHTML = '';
+            if (myStudents.length === 0) {
+                bodyHTML = `<tr><td colspan="2" class="p-6 text-center text-gray-500">You have no students assigned to you.</td></tr>`;
+            } else {
+                
+                const facultyLectures = appData.lectureAttendance[currentUser.id] || {};
+                const totalLecturesHeld = Object.keys(facultyLectures).length;
+
+                myStudents.forEach(student => {
+                    bodyHTML += `<tr><td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${student.name}</td>`;
+                    
+                    // --- THIS IS THE FLEXIBLE LOGIC YOU REQUESTED ---
+                    let lecturesAttended = 0;
+                    if (totalLecturesHeld > 0) {
+                        for (const date in facultyLectures) {
+                            // 1. Check if they were present in the lecture
+                            let isPresent = (facultyLectures[date][student.studentId] === true);
+
+                            // 2. If not, check if they attended an event on the same day
+                            if (!isPresent) {
+                                const eventsOnThisDate = appData.events.filter(e => e.date === date);
+                                for (const event of eventsOnThisDate) {
+                                    if (appData.attendance[event.id]?.[student.studentId] === true) {
+                                        isPresent = true; // Credit for event attendance
+                                        break; // Stop checking events for this date
+                                    }
+                                }
+                            }
+                            
+                            // 3. Increment total if present in either
+                            if (isPresent) {
+                                lecturesAttended++;
+                            }
+                        }
+                        const percentage = Math.round((lecturesAttended / totalLecturesHeld) * 100);
+                        bodyHTML += `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${percentage}% (${lecturesAttended}/${totalLecturesHeld})</td>`;
+                    } else {
+                        bodyHTML += `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">N/A (0)</td>`;
+                    }
+                    // --- END OF NEW LOGIC ---
+
+                    // REMOVED: Loop that added event status columns
+                    bodyHTML += `</tr>`;
+                });
+            }
+            tableBody.innerHTML = bodyHTML;
+            setTimeout(() => lucide.createIcons(), 0);
+        }
+
+        // 2. My Students View
+        function loadMyStudentsData() {
+            const myStudents = appData.students.filter(s => s.facultyId === currentUser.id);
+            const tableBody = document.getElementById('my-students-table-body');
+            
+            if (myStudents.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-500">You have no students assigned to you.</td></tr>`;
+                return;
+            }
+            
+            const rowsHtml = myStudents.map(student => `
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${student.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${student.email}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${student.studentId}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${student.branch}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${student.yearOfRegistration}</td>
+                </tr>
+            `).join('');
+            tableBody.innerHTML = rowsHtml;
+        }
+        
+        // 3. Mark Lecture Attendance View (NEW)
+        function loadMarkLectureData() {
+            document.getElementById('lecture-title-sub').textContent = `Your Students (${currentUser.subject})`;
+            document.getElementById('mark-lecture-table-title').textContent = `Attendance for ${demoDate}`;
+            renderMarkLectureTable(demoDate);
+        }
+
+        function renderMarkLectureTable(date) {
+            const tableBody = document.getElementById('mark-lecture-table-body');
+            const myStudents = appData.students.filter(s => s.facultyId === currentUser.id);
+            
+            const attendanceForDate = appData.lectureAttendance[currentUser.id]?.[date] || {};
+
+            const rowsHtml = myStudents.map(student => {
+                const status = attendanceForDate[student.studentId];
+                
+                const attendedClass = status === true ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300';
+                const absentClass = status === false ? 'bg-red-600 text-white' : 'bg-gray-200 hover:bg-gray-300';
+                
+                return `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${student.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${student.studentId}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${renderAttendanceStatus(status)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                            <button data-action="mark-lecture-attendance" data-student-id="${student.studentId}" data-status="true" class="font-bold py-2 px-4 rounded-lg transition-all ${attendedClass}">
+                                Present
+                            </button>
+                            <button data-action="mark-lecture-attendance" data-student-id="${student.studentId}" data-status="false" class="font-bold py-2 px-4 rounded-lg transition-all ${absentClass}">
+                                Absent
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            tableBody.innerHTML = rowsHtml;
+            setTimeout(() => lucide.createIcons(), 0);
+        }
+        
+        // 4. Mark Event Attendance View (Unchanged)
+        function loadMarkAttendanceData() {
+            const eventSelect = document.getElementById('event-filter');
+            
+            let eventOptionsHTML = '';
+            appData.events.forEach(event => {
+                eventOptionsHTML += `<option value="${event.id}">${event.name} (${event.date})</option>`;
+            });
+            eventSelect.innerHTML = eventOptionsHTML;
+            
+            const firstEventId = appData.events[0]?.id;
+            if (firstEventId) {
+                renderMarkAttendanceTable(firstEventId);
+            }
+        }
+        
+        function renderMarkAttendanceTable(eventId) {
+            const tableBody = document.getElementById('mark-attendance-table-body');
+            const allStudents = appData.students;
+            
+            if (!eventId) {
+                tableBody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-500">Please select an event.</td></tr>`;
+                return;
+            }
+            
+            const eventName = appData.events.find(e => e.id === eventId)?.name || 'All Students';
+            document.getElementById('mark-attendance-table-title').textContent = `Attendance for: ${eventName}`;
+
+            const rowsHtml = allStudents.map(student => {
+                const status = appData.attendance[eventId]?.[student.studentId];
+                
+                const attendedClass = status === true ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300';
+                const absentClass = status === false ? 'bg-red-600 text-white' : 'bg-gray-200 hover:bg-gray-300';
+                
+                return `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${student.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${student.studentId}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${renderAttendanceStatus(status)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                            <button data-action="mark-attendance" data-event-id="${eventId}" data-student-id="${student.studentId}" data-status="true" class="font-bold py-2 px-4 rounded-lg transition-all ${attendedClass}">
+                                Attended
+                            </button>
+                            <button data-action="mark-attendance" data-event-id="${eventId}" data-student-id="${student.studentId}" data-status="false" class="font-bold py-2 px-4 rounded-lg transition-all ${absentClass}">
+                                Absent
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            tableBody.innerHTML = rowsHtml;
+            setTimeout(() => lucide.createIcons(), 0);
+        }
+        
+        // --- UTILITY ---
+        function renderAttendanceStatus(status) {
+            let iconHtml = '';
+            if (status === true) {
+                iconHtml = '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><i data-lucide="check-circle" class="h-4 w-4"></i>Attended</span>';
+            } else if (status === false) {
+                iconHtml = '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"><i data-lucide="x-circle" class="h-4 w-4"></i>Absent</span>';
+            } else {
+                iconHtml = '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"><i data-lucide="minus" class="h-4 w-4"></i>N/A</span>';
+            }
+            
+            setTimeout(() => lucide.createIcons(), 0);
+            return iconHtml;
+        }
+
+    </script>
+</body>
+</html>
