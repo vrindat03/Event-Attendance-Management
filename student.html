@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - Digital Attendance</title>
+    <!-- 1. Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <style>
+        /* Optional: Custom scrollbar (same as admin) */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background-color: #4a5568; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background-color: #1a202c; }
+    </style>
+</head>
+<body class="antialiased text-slate-800 bg-gray-100">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-800 text-white flex flex-col fixed inset-y-0 left-0 z-20">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-white">Student Panel</h1>
+            </div>
+            <nav class="flex-1 space-y-2 px-4">
+                <a href="#" data-action="show-view" data-view="dashboard" class="flex items-center gap-3 px-4 py-2 rounded-lg bg-blue-600 text-white">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>My Attendance</span>
+                </a>
+                <a href="#" data-action="show-view" data-view="events" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-slate-700 transition-all">
+                    <i data-lucide="calendar-check"></i>
+                    <span>View Events</span>
+                </a>
+            </nav>
+            <div class="p-4 mt-auto">
+                <div class="px-4 py-2 mb-4 text-sm bg-gray-900 rounded-lg">
+                    <p class="font-medium" id="sidebar-user-name">Alex Johnson</p>
+                    <p class="text-xs text-gray-400" id="sidebar-user-role">Student</p>
+                </div>
+                <button data-action="logout" class="flex w-full items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-all">
+                    <i data-lucide="log-out" class="h-5 w-5"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="ml-64 flex-1 p-8">
+            <!-- View: Dashboard (My Attendance Report) -->
+            <div id="view-dashboard" class="view-panel">
+                <div>
+                    <h2 class="text-4xl font-semibold text-gray-800">My Attendance Report</h2>
+                    <h3 class="text-xl font-medium text-gray-600 mt-2">Your overall attendance for your subjects.</h3>
+                </div>
+                 
+                 <div class="mt-8 bg-white p-8 rounded-xl shadow-lg">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faculty</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Your Attendance</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lectures Attended / Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-report-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Report rows will be injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                 </div>
+            </div>
+            
+            <!-- View: View Events -->
+            <div id="view-events" class="view-panel hidden">
+                 <div>
+                    <h2 class="text-4xl font-semibold text-gray-800">Events & Workshops</h2>
+                    <h3 class="text-xl font-medium text-gray-600 mt-2">List of all college events and your attendance status.</h3>
+                 </div>
+                 <div class="mt-8 bg-white p-8 rounded-xl shadow-lg">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Your Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="events-table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Event rows will be injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                 </div>
+            </div>
+            
+        </main>
+    </div>
+
+
+    <script>
+        // --- MOCK DATA & CURRENT USER ---
+        // This simulates the data your backend would provide
+        
+        // This is the currently logged-in student
+        const currentUser = {
+            id: "S-1001",
+            name: "Alex Johnson",
+            role: "Student",
+            facultyId: "F-1001"
+        };
+        
+        // This is the "database" cache
+        const appData = {
+            faculty: [
+                { id: "F-1001", name: "Prof. Elara Vance", subject: "Data Structures" },
+                { id: "F-1002", name: "Prof. Kenji Tanaka", subject: "Physics" }
+            ],
+            events: [
+                { id: "E-101", name: "Innovatech AI Conference", date: "2025-11-14" },
+                { id: "E-102", name: "Guest Lecture: Quantum Computing", date: "2025-11-15" },
+                { id: "E-103", name: "Workshop: Agile Methodologies", date: "2025-11-16" }
+            ],
+            // Event Attendance: { eventId: { studentId: true/false } }
+            attendance: {
+                "E-101": { "S-1001": true, "S-1002": true, "S-1003": false },
+                "E-102": { "S-1001": true, "S-1003": true }
+            },
+            // Lecture Attendance: { facultyId: { date: { studentId: true/false } } }
+            lectureAttendance: {
+                "F-1001": {
+                    "2025-11-14": { "S-1001": true, "S-1003": true },
+                    "2025-11-15": { "S-1001": false, "S-1003": false } // Alex was marked ABSENT for lecture on 15th
+                }
+            }
+        };
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            setupSidebar();
+            showView('dashboard');
+        });
+        
+        function setupSidebar() {
+            document.getElementById('sidebar-user-name').textContent = currentUser.name;
+            document.getElementById('sidebar-user-role').textContent = currentUser.role;
+        }
+
+        // --- VIEW MANAGEMENT ---
+        function showView(viewId) {
+            document.querySelectorAll('.view-panel').forEach(panel => {
+                panel.classList.add('hidden');
+            });
+            
+            const targetView = document.getElementById(`view-${viewId}`);
+            if (targetView) {
+                targetView.classList.remove('hidden');
+            }
+            
+            document.querySelectorAll('aside nav a').forEach(a => {
+                a.classList.remove('bg-blue-600', 'text-white');
+                a.classList.add('hover:bg-slate-700');
+            });
+            
+            const targetLink = document.querySelector(`aside nav a[data-view="${viewId}"]`);
+            if (targetLink) {
+                targetLink.classList.add('bg-blue-600', 'text-white');
+                targetLink.classList.remove('hover:bg-slate-700');
+            }
+            
+            // Load data for the shown view
+            if (viewId === 'dashboard') loadDashboardData();
+            if (viewId === 'events') loadEventsData();
+        }
+
+        // --- CLICK/CHANGE EVENT HANDLERS ---
+        document.body.addEventListener('click', (e) => {
+            const actionButton = e.target.closest('[data-action]');
+            if (!actionButton) return;
+
+            const action = actionButton.dataset.action;
+
+            if (action === 'show-view') {
+                e.preventDefault(); 
+                showView(actionButton.dataset.view);
+                return;
+            }
+            
+            if (action === 'logout') {
+                alert("You have been logged out.");
+                return;
+            }
+        });
+        
+        // --- DATA LOADING & RENDERING ---
+
+        // 1. Dashboard View (My Attendance)
+        function loadDashboardData() {
+            const tableBody = document.getElementById('dashboard-report-body');
+            
+            // In a real app, you'd fetch the student's enrolled subjects.
+            // Here, we find the faculty (and thus subject) they are assigned to.
+            const myFaculty = appData.faculty.find(f => f.id === currentUser.facultyId);
+            
+            if (!myFaculty) {
+                 tableBody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-500">You are not assigned to a faculty.</td></tr>`;
+                 return;
+            }
+
+            const facultyLectures = appData.lectureAttendance[myFaculty.id] || {};
+            const totalLecturesHeld = Object.keys(facultyLectures).length;
+
+            let lecturesAttended = 0;
+            if (totalLecturesHeld > 0) {
+                for (const date in facultyLectures) {
+                    // 1. Check if they were present in the lecture
+                    let isPresent = (facultyLectures[date][currentUser.id] === true);
+
+                    // 2. If not, check if they attended an event on the same day
+                    if (!isPresent) {
+                        const eventsOnThisDate = appData.events.filter(e => e.date === date);
+                        for (const event of eventsOnThisDate) {
+                            if (appData.attendance[event.id]?.[currentUser.id] === true) {
+                                isPresent = true; // Credit for event attendance
+                                break; 
+                            }
+                        }
+                    }
+                    
+                    if (isPresent) {
+                        lecturesAttended++;
+                    }
+                }
+                const percentage = Math.round((lecturesAttended / totalLecturesHeld) * 100);
+                
+                tableBody.innerHTML = `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${myFaculty.subject}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${myFaculty.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold ${percentage >= 75 ? 'text-green-600' : 'text-red-600'}">${percentage}%</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${lecturesAttended} / ${totalLecturesHeld}</td>
+                    </tr>
+                `;
+
+            } else {
+                 tableBody.innerHTML = `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${myFaculty.subject}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${myFaculty.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-500">N/A</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">0 / 0</td>
+                    </tr>
+                `;
+            }
+        }
+
+        // 2. View Events
+        function loadEventsData() {
+            const allEvents = appData.events;
+            const tableBody = document.getElementById('events-table-body');
+            
+            if (allEvents.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-gray-500">No events found.</td></tr>`;
+                return;
+            }
+            
+            const rowsHtml = allEvents.map(event => {
+                const status = appData.attendance[event.id]?.[currentUser.id];
+                return `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${event.date}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${event.name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${renderAttendanceStatus(status)}</td>
+                    </tr>
+                `;
+            }).join('');
+            tableBody.innerHTML = rowsHtml;
+            setTimeout(() => lucide.createIcons(), 0);
+        }
+        
+        // --- UTILITY ---
+        function renderAttendanceStatus(status) {
+            let iconHtml = '';
+            if (status === true) {
+                iconHtml = '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><i data-lucide="check-circle" class="h-4 w-4"></i>Attended</span>';
+            } else if (status === false) {
+                iconHtml = '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"><i data-lucide="x-circle" class="h-4 w-4"></i>Absent</span>';
+            } else {
+                iconHtml = '<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"><i data-lucide="minus" class="h-4 w-4"></i>N/A</span>';
+            }
+            
+            setTimeout(() => lucide.createIcons(), 0);
+            return iconHtml;
+        }
+
+    </script>
+</body>
+</html>
